@@ -1,0 +1,29 @@
+/* Local-only demo storage. Never use this authentication model for real accounts. */
+const Store = (() => {
+  const keys={users:'bookstore_users',current:'bookstore_current_user',books:'bookstore_books',cart:'bookstore_cart',wishlist:'bookstore_wishlist',orders:'bookstore_orders',categories:'bookstore_categories'};
+  const read=(key,fallback)=>{try{const raw=localStorage.getItem(key);if(raw===null)return structuredClone(fallback);const value=JSON.parse(raw);if(value===null || (Array.isArray(fallback)&&!Array.isArray(value)) || (fallback && !Array.isArray(fallback) && typeof fallback==='object' && (typeof value!=='object'||Array.isArray(value))))return structuredClone(fallback);return value}catch(e){return structuredClone(fallback)}};
+  const write=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value));return true}catch(e){alert('Browser storage is unavailable or full. Your changes could not be saved.');return false}};
+  const remove=key=>localStorage.removeItem(key);
+  const update=(key,fallback,fn)=>{const value=fn(read(key,fallback));write(key,value);return value};
+  const categories=['Fiction','Mystery','Romance','Self-help','Technology','Science','Business','Fantasy','Biography'];
+  const seed=[
+    ['The Midnight Library','Matt Haig','Fiction',499,4.5,'9780525559474'],['The Book Thief','Markus Zusak','Fiction',549,4.7,'9780375842207'],['A Man Called Ove','Fredrik Backman','Fiction',499,4.6,'9781476738024'],['Normal People','Sally Rooney','Fiction',450,4.2,'9781984822185'],
+    ['The Silent Patient','Alex Michaelides','Mystery',399,4.5,'9781250301697'],['The Girl on the Train','Paula Hawkins','Mystery',449,4.1,'9781594633669'],['Gone Girl','Gillian Flynn','Mystery',499,4.3,'9780307588371'],['The Thursday Murder Club','Richard Osman','Mystery',550,4.4,'9781984880987'],
+    ['Pride and Prejudice','Jane Austen','Romance',299,4.8,'9780141439518'],['The Love Hypothesis','Ali Hazelwood','Romance',450,4.3,'9780593336823'],['Me Before You','Jojo Moyes','Romance',399,4.5,'9780143124542'],['The Seven Husbands of Evelyn Hugo','Taylor Jenkins Reid','Romance',499,4.7,'9781501161933'],
+    ['Atomic Habits','James Clear','Self-help',599,4.8,'9780735211292'],['The Psychology of Money','Morgan Housel','Self-help',399,4.7,'9780857197689'],['The Mountain Is You','Brianna Wiest','Self-help',449,4.3,'9781949759228'],['The Alchemist','Paulo Coelho','Self-help',350,4.5,'9780062315007'],
+    ['Clean Code','Robert C. Martin','Technology',899,4.6,'9780132350884'],['The Pragmatic Programmer','Andrew Hunt & David Thomas','Technology',999,4.7,'9780135957059'],['The Design of Everyday Things','Don Norman','Technology',699,4.6,'9780465050659'],['Code','Charles Petzold','Technology',799,4.5,'9780137909100'],
+    ['A Brief History of Time','Stephen Hawking','Science',499,4.6,'9780553380163'],['Cosmos','Carl Sagan','Science',649,4.8,'9780345539434'],['Sapiens','Yuval Noah Harari','Science',699,4.7,'9780062316097'],['The Gene','Siddhartha Mukherjee','Science',799,4.7,'9781476733524'],
+    ['The Lean Startup','Eric Ries','Business',599,4.5,'9780307887894'],['Zero to One','Peter Thiel','Business',499,4.4,'9780804139298'],['Good to Great','Jim Collins','Business',699,4.5,'9780066620992'],['Start With Why','Simon Sinek','Business',550,4.5,'9781591846444'],
+    ['The Hobbit','J.R.R. Tolkien','Fantasy',599,4.8,'9780547928227'],['The Name of the Wind','Patrick Rothfuss','Fantasy',699,4.7,'9780756404741'],['The Night Circus','Erin Morgenstern','Fantasy',499,4.5,'9780307744432'],['The House in the Cerulean Sea','TJ Klune','Fantasy',599,4.6,'9781250217318'],
+    ['Becoming','Michelle Obama','Biography',699,4.8,'9781524763138'],['Wings of Fire','A.P.J. Abdul Kalam','Biography',350,4.8,'9788173711466'],['Steve Jobs','Walter Isaacson','Biography',799,4.6,'9781451648539'],['Educated','Tara Westover','Biography',550,4.7,'9780399590504']
+  ];
+  const books=seed.map((b,i)=>({id:'book-'+(i+1),title:b[0],author:b[1],category:b[2],price:b[3],rating:b[4],isbn:b[5],image:'https://covers.openlibrary.org/b/isbn/'+b[5]+'-L.jpg',stock:8+(i%12),featured:i<8,popularity:100-i,description:'A compelling read from '+b[1]+'. '+b[0]+' invites readers into a memorable world of ideas, emotion and discovery. A thoughtful addition to any bookshelf.'}));
+  function init(){if(localStorage.getItem(keys.books)===null)write(keys.books,books);if(localStorage.getItem(keys.categories)===null)write(keys.categories,categories);if(localStorage.getItem(keys.users)===null)write(keys.users,[{id:'admin',name:'Room Admin',email:'admin@readingroom.demo',password:'Admin123!',role:'admin',phone:'',address:''},{id:'customer',name:'Demo Reader',email:'reader@readingroom.demo',password:'Reader123!',role:'customer',phone:'',address:''}]);for(const k of ['cart','wishlist'])if(localStorage.getItem(keys[k])===null)write(keys[k],{});if(localStorage.getItem(keys.orders)===null)write(keys.orders,[])}
+  function current(){let id;try{id=JSON.parse(sessionStorage.getItem(keys.current)||localStorage.getItem(keys.current)||'null')}catch(e){id=null}return read(keys.users,[]).find(u=>u.id===id)||null}
+  function login(id,remember){localStorage.removeItem(keys.current);sessionStorage.removeItem(keys.current);(remember?localStorage:sessionStorage).setItem(keys.current,JSON.stringify(id))}
+  function logout(){localStorage.removeItem(keys.current);sessionStorage.removeItem(keys.current)}
+  function userList(type,id){return read(keys[type],{})[id]||[]}
+  function setUserList(type,id,list){const all=read(keys[type],{});all[id]=list;return write(keys[type],all)}
+  return {keys,read,write,remove,update,init,current,login,logout,userList,setUserList};
+})();
+Store.init();
